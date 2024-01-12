@@ -1,0 +1,154 @@
+
+//+------------------------------------------------------------------+
+//|                                                   Hull Moving Average MT5   |
+//|                                   Copyright © 2021 forexroboteasy.com |
+//|                                           Developer: Forex Robot Easy Team |
+//+------------------------------------------------------------------+
+
+// Include necessary libraries
+#include <MovingAverages.mqh>
+
+// Define input parameters
+input int period = 20; // Period for HMA calculation
+
+//+------------------------------------------------------------------+
+//| Custom Hull Moving Average Function                               |
+//+------------------------------------------------------------------+
+double HullMovingAverage(const double &price[], const int &length)
+{
+    double wma1 = 0.0;
+    double wma2 = 0.0;
+    double wma3 = 0.0;
+    double wma4 = 0.0;
+
+    for (int i = 0; i < length / 2; i++)
+    {
+        wma1 += price[i] * (length - i);
+        wma2 += (length - i);
+    }
+
+    for (int i = length / 2; i < length; i++)
+    {
+        wma3 += price[i] * (length - i);
+        wma4 += (length - i);
+    }
+
+    double hma = 2 * WeightedMovingAverage(wma1 / wma2, wma3 / wma4) - WeightedMovingAverage(wma1 / wma2, wma3 / wma4, length);
+
+    return hma;
+}
+
+//+------------------------------------------------------------------+
+//| Custom Weighted Moving Average Function                          |
+//+------------------------------------------------------------------+
+double WeightedMovingAverage(const double &price[], const int &length)
+{
+    double wma = 0.0;
+    double totalWeight = 0.0;
+
+    for (int i = 0; i < length; i++)
+    {
+        wma += price[i] * (length - i);
+        totalWeight += (length - i);
+    }
+
+    wma /= totalWeight;
+
+    return wma;
+}
+
+//+------------------------------------------------------------------+
+//| Custom function to cut through market noise                       |
+//+------------------------------------------------------------------+
+double CutThroughMarketNoise(const double &price[], const int &length)
+{
+    double smoothPrice = 0.0;
+
+    for (int i = 0; i < length; i++)
+    {
+        smoothPrice += price[i];
+    }
+
+    smoothPrice /= length;
+
+    return smoothPrice;
+}
+
+//+------------------------------------------------------------------+
+//| Custom function to identify trend reversals                       |
+//+------------------------------------------------------------------+
+bool IdentifyTrendReversal(const double &price[], const int &length)
+{
+    double currentPrice = price[0];
+    double previousPrice = price[1];
+
+    if (currentPrice > previousPrice)
+    {
+        return true; // Upward trend reversal
+    }
+    else if (currentPrice < previousPrice)
+    {
+        return true; // Downward trend reversal
+    }
+    else
+    {
+        return false; // No trend reversal
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Custom function to identify profitable trading opportunities     |
+//+------------------------------------------------------------------+
+bool IdentifyProfitableOpportunity(const double &price[], const int &length)
+{
+    double currentPrice = price[0];
+    double previousPrice = price[1];
+
+    if (currentPrice > previousPrice)
+    {
+        return true; // Profitable buying opportunity
+    }
+    else if (currentPrice < previousPrice)
+    {
+        return true; // Profitable selling opportunity
+    }
+    else
+    {
+        return false; // No profitable opportunity
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Custom function to initialize the indicator                       |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Initialize the Hull Moving Average indicator
+    double hma = HullMovingAverage(iClose(_Symbol, _Period, 0), period);
+
+    // Print the calculated Hull Moving Average value
+    Print('Hull Moving Average: ', hma);
+
+    return INIT_SUCCEEDED;
+}
+
+//+------------------------------------------------------------------+
+//| Custom function to handle the indicator value changes             |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+    // Calculate and update the Hull Moving Average value on each tick
+    double hma = HullMovingAverage(iClose(_Symbol, _Period, 0), period);
+
+    // Print the updated Hull Moving Average value
+    Print('Updated Hull Moving Average: ', hma);
+}
+
+//+------------------------------------------------------------------+
+//| Custom function to deinitialize the indicator                     |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+    // Perform necessary cleanup and deinitialization tasks
+    Print('Hull Moving Average MT5 deinitialized');
+}
